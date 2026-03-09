@@ -4,13 +4,11 @@ from tensorflow.keras import layers, models
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import matplotlib.pyplot as plt
 
-# 1. Ορισμός Διαδρομών
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 train_dir = os.path.join(BASE_DIR, 'data', 'Cars Dataset', 'train')
 test_dir = os.path.join(BASE_DIR, 'data', 'Cars Dataset', 'test')
 model_path = os.path.join(BASE_DIR, 'car_classifier_model.h5')
 
-# 2. Προετοιμασία Δεδομένων (Data Generators)
 train_datagen = ImageDataGenerator(
     rescale=1./255,
     rotation_range=20,
@@ -22,7 +20,6 @@ train_datagen = ImageDataGenerator(
     fill_mode='nearest'
 )
 
-# Για το test (validation) κάνουμε μόνο rescale
 test_datagen = ImageDataGenerator(rescale=1./255)
 
 train_generator = train_datagen.flow_from_directory(
@@ -39,7 +36,6 @@ test_generator = test_datagen.flow_from_directory(
     class_mode='categorical'
 )
 
-# 3. Χτίσιμο του CNN από το μηδέν
 model = models.Sequential([
     # Layer 1
     layers.Conv2D(32, (3, 3), activation='relu', input_shape=(150, 150, 3)),
@@ -60,34 +56,29 @@ model = models.Sequential([
     # Classification Head
     layers.Flatten(),
     layers.Dense(512, activation='relu'),
-    layers.Dropout(0.5), # Προστασία από overfitting
+    layers.Dropout(0.5),
     layers.Dense(train_generator.num_classes, activation='softmax')
 ])
 
-# 4. Compile και Callback
 model.compile(
     optimizer='adam',
     loss='categorical_crossentropy',
     metrics=['accuracy']
 )
 
-# Σταματάει την εκπαίδευση αν το val_loss δεν βελτιωθεί για 5 συνεχόμενες εποχές
 early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
 
-# 5. Εκπαίδευση
-print("Ξεκινάει η εκπαίδευση...")
+print("Starting model training...")
 history = model.fit(
     train_generator,
-    epochs=50, # Βάζουμε 50, αλλά το EarlyStopping θα το σταματήσει νωρίτερα αν χρειαστεί
+    epochs=50, 
     validation_data=test_generator,
     callbacks=[early_stop]
 )
 
-# 6. Αποθήκευση Μοντέλου
 model.save(model.path)
-print(f"Το μοντέλο αποθηκεύτηκε στο: {model_path}")
+print(f"Model was saved in: {model_path}")
 
-# 7. Οπτικοποίηση Αποτελεσμάτων
 acc = history.history['accuracy']
 val_acc = history.history['val_accuracy']
 epochs_range = range(len(acc))
